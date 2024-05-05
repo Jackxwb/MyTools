@@ -1,0 +1,606 @@
+<!DOCTYPE html>
+<html lang="zh">
+<head>
+    <meta charset="UTF-8">
+    <title>JSON翻译文件处理程序</title>
+    <style>
+        * {
+            padding: 0;
+            margin: 0;
+        }
+
+        html, body {
+            width: 100vw;
+            height: 100vh;
+            overflow: hidden;
+        }
+
+        textarea {
+            outline: none;
+        }
+
+        #box {
+            height: 100%;
+            width: 100%;
+
+            display: flex;
+            flex-direction: row;
+            justify-content: space-around;
+        }
+
+        .textBox {
+            width: 30%;
+            display: flex;
+            flex-direction: column;
+            margin-bottom: 1rem;
+        }
+
+        .textBox > textarea {
+            width: 100%;
+            flex-grow: 1;
+            resize: none;
+        }
+
+        #tip{
+            display: flex;
+            flex-direction: column;
+        }
+    </style>
+    <script>
+        var in1 = document.getElementById("newCN");
+        var in2 = document.getElementById("oldOtherFile");
+        var out = document.getElementById("newOther");
+        var errOut = document.getElementById("errOut");
+
+        function processingData() {
+            let outMode = document.querySelector("input[name=outMode]:checked").value;
+            let data2Mode = document.querySelector("input[name=data2Mode]:checked").value;
+
+            let newData = parse(in1.value);
+            let newTempleData = MapConvertToPathSet(newData);
+            // console.log("newTempleData", newTempleData)
+            console.log("newData", newData)
+
+            let oldData
+            let oldTempleData
+            let TextModeOutPrint
+            switch (data2Mode) {
+                case "isJSON":
+                    oldData = parse(in2.value);
+                    oldTempleData = MapConvertToPathSet(oldData);
+                    break;
+                case "isMap":
+                    oldTempleData = JSON.parse(in2.value)
+                    break;
+                case "isText":
+                    TextModeOutPrint = readOrOutText(newData, in2.value.split("\n"))
+                    //数据已经通过上一步传入，不需要合并数据，所有不需要给 oldTempleData 赋值
+                    break;
+            }
+            // let oldData = parse(in2.value);
+            // let oldTempleData = MapConvertToPathSet(oldData);
+            // // console.log("oldTempleData", oldTempleData)
+            // console.log("oldData", oldData)
+
+            let mergeData_
+            if(oldTempleData){
+                // 合并数据
+                mergeData_ = mergeData(newTempleData, oldTempleData);
+                // 读取数据
+                readData(newData, mergeData_)
+            }
+
+            let text
+            switch (outMode) {
+                // case "printKey":
+                // case "printVal":
+                //     break;
+                case "printPathVal":
+                    console.log("printPathVal", mergeData_)
+                    //直接输出合并后的Data
+                    text = JSON.stringify(mergeData_, null, '\t');
+                    break
+                case "printTxt":
+                    if(TextModeOutPrint){
+                        text = TextModeOutPrint
+                    }else{
+                        text = readOrOutText(newData)
+                    }
+                    break;
+                default:
+                    //打印数据
+                    text = reCreateJSONText(newData, outMode==="printKey");
+            }
+            out.value = text
+
+            var tipBox = document.getElementById("tip");
+            tipBox.innerHTML=""
+        }
+
+        /**
+         * 处理JSON文本，返回类似LinkMap对象
+         * @param inData
+         * @returns {{val: null, path: string, son: *[], fa: null, type: string, key: null}}
+         */
+        function parse(inData) {
+            const rootData = {
+                son: [],
+                fa: null,
+                key: null,
+                val: null,
+                path: "",
+                type: "root"
+            }
+            // let oldData = JSON.parse(in2.value);
+            //let allLines = in1.value.split("\n");
+            let allLines = inData.split("\n");
+            out.value = ""
+            errOut.value = ""
+            rootData.son = []
+
+            let lastItem
+
+            let lineOne = pOneLineData(allLines[0]);
+            if (!lineOne.isStart && lineOne.Err != 'no find key!') {
+                console.log("异常的第一行")
+                return
+            }
+
+            lastItem = rootData
+
+            for (let i = 1; i < allLines.length; i++) {
+                let nowLine = allLines[i];
+                // console.log(nowLine, pOneLineData(nowLine))
+                if (nowLine.trim() == "") continue;
+
+                let result = pOneLineData(nowLine);
+
+                if (result.isEnd) {
+                    if (result.isStart) {//单行直接结束
+                        if (result.key == null) {
+                            console.log("对象开始，却找不到第一行", i, result, nowLine)
+                            errOut += `line: ${i} , 对象开始，却找不到第一行, ${result}`
+                            continue
+                        }
+                        let newObj = {
+                            son: [],
+                            fa: lastItem,
+                            key: result.key,
+                            path: lastItem.path + "." + result.key,
+                            type: "object"
+                        }
+                        lastItem.son.push(newObj)
+                        continue
+                    }
+                    lastItem = lastItem.fa
+                    continue
+                }
+                if (result.isStart) {
+                    if (result.key == null) {
+                        console.log("对象开始，却找不到第一行", i, result, nowLine)
+                        errOut += `line: ${i} , 对象开始，却找不到第一行, ${result}`
+                        continue
+                    }
+                    let newObj = {
+                        son: [],
+                        fa: lastItem,
+                        key: result.key,
+                        path: lastItem.path + "." + result.key,
+                        type: "object"
+                    }
+                    lastItem.son.push(newObj)
+                    lastItem = newObj
+                    continue
+                }
+
+                let newItem = {
+                    son: [],
+                    fa: lastItem,
+                    key: result.key,
+                    val: result.val,
+                    path: lastItem.path + "." + result.key,
+                    type: "item"
+                }
+                lastItem.son.push(newItem)
+            }
+
+            return rootData;
+        }
+
+        /**
+         *  分析单行数据
+         */
+        const objStart = /.*\{.*/
+        const objKeyVal = /.*"[^"]*".?\:.?"[^"]*".*/
+        const objEnd = /.*\}.*/
+
+        const objStartGetKey = /.*"([^"]*)".?\:/
+        const objStartGetVal = /\:.*"([^"]*)"/
+
+        function pOneLineData(str) {
+            let isStart = objStart.test(str);
+            let isKV = objKeyVal.test(str);
+            let isEnd = objEnd.test(str);
+            // if(isEnd)return {isEnd:isEnd}
+
+            let findKey = objStartGetKey.exec(str);
+            if (findKey == null || findKey.length < 2) {
+                return {
+                    isStart: isStart,
+                    isKV: isKV,
+                    isEnd: isEnd,
+                    key: null,
+                    Err: 'no find key!'
+                }
+            }
+            let key = findKey[1];
+
+            let findVal = objStartGetVal.exec(str);
+            let val = null;
+            if (findVal != null && findVal.length > 1) {
+                val = findVal[1]
+            }
+            return {
+                isStart: isStart,
+                isKV: isKV,
+                isEnd: isEnd,
+                key: key,
+                val: val
+            }
+        }
+
+        /**
+         * 将 linkMap 转成 路径 Set，方便同步数据
+         * @constructor
+         */
+        function MapConvertToPathSet(linkMap) {
+            let allSet = {}
+            allSet = getLinkMapData(linkMap)
+            return allSet
+        }
+
+        function getLinkMapData(data) {
+            let Set = {}
+            if (data.type == "root" || data.type == "object") {
+                for (const sonElement of data.son) {
+                    let tmp = getLinkMapData(sonElement);
+                    Set = {...Set, ...tmp}
+                }
+            } else {
+                Set[data.path] = data.val
+            }
+            return Set
+        }
+
+        /**
+         * 合并数据
+         * @param data1
+         * @param data2
+         * @returns {*}
+         */
+        function mergeData(data1, data2) {
+            for (const key in data1) {
+                if (data2[key]) {
+                    data1[key] = data2[key]
+                }
+            }
+            return data1
+        }
+
+        /**
+         * 将 linkMap 还原成 JSON文本
+         * @param LinkMap
+         * @param printKey
+         * @returns {string}
+         */
+        function reCreateJSONText(LinkMap, printKey=false) {
+            let text = ""
+            text = reCreate(LinkMap, 0, null, printKey)
+            return text
+        }
+        function reCreate(obj, level, isEnd, printKey=false) {
+            // console.log("level", level)
+            let tmp = ""
+            switch (obj.type) {
+                case "root":
+                    // console.log("reCreate -> root", level)
+                    tmp += "{\r\n"
+                    for (let i = 0; i < obj.son.length; i++) {
+                        let sonElement = obj.son[i];
+                        tmp += reCreate(sonElement, level + 1, (i + 1) == obj.son.length, printKey)
+                    }
+                    tmp += "}\r\n";
+                    break;
+                case "object":
+                    // console.log("reCreate -> object", level)
+                    tmp += makeChar(' ', level)
+                    tmp += `"${obj.key}": {\r\n`
+                    for (let i = 0; i < obj.son.length; i++) {
+                        let sonElement = obj.son[i];
+                        tmp += reCreate(sonElement, level + 1, (i + 1) == obj.son.length, printKey)
+                    }
+                    tmp += makeChar(' ', level)
+                    tmp += "}"
+                    if (!isEnd) tmp += ",";
+                    tmp += "\r\n";
+                    break;
+                case "item":
+                    // console.log("reCreate     -> item", obj.key, level)
+                    tmp += makeChar(' ', level)
+                    // tmp += `"${obj.key}": "${obj.val}",\r\n`
+                    if(printKey){
+                        //转英文
+                        tmp += `"${obj.key}": "${obj.key}"`;
+                    }else{
+                        //正常打印
+                        tmp += `"${obj.key}": "${obj.val}"`;
+                    }
+
+                    if (!isEnd) tmp += ",";
+                    tmp += "\r\n";
+                    break;
+            }
+            return tmp
+        }
+
+        /**
+         * 字符串生成
+         * @param char 指定字符
+         * @param level 重复次数
+         * @returns {string}
+         */
+        function makeChar(char, level) {
+            let t = ""
+            for (let i = 0; i < level; i++) {
+                t += char;
+            }
+            return t;
+        }
+
+        /**
+         * 更新数据，将 Path-Val 路径导入 obj 对象中
+         * @param obj
+         * @param data
+         * @returns {*}
+         */
+        function readData(obj, data) {
+            return rData(obj, data)
+        }
+        function rData(obj, data) {
+            switch (obj.type) {
+                case "root":
+                case "object":
+                    for (let sonElement of obj.son) {
+                        rData(sonElement, data)
+                    }
+                    break;
+                case "item":
+                    obj.val = data[obj.path]
+                    break;
+            }
+        }
+
+        /**
+         * 将Text数据导入，或者导出
+         * @param obj
+         * @param inData
+         */
+        function readOrOutText(obj, inData) {
+            return readOrOut(obj, inData, [0])
+        }
+        function readOrOut(obj, inData, lineNum) {
+            let out = ""
+            switch (obj.type) {
+                case "root":
+                case "object":
+                    for (let sonElement of obj.son) {
+                        out += readOrOut(sonElement, inData, lineNum);
+                    }
+                    break;
+                case "item":
+                    if (inData){
+                        //读取模式
+                        if(inData.length <= lineNum[0]){
+                            //data 2 传入的数据读完了。没有了
+                        }else{
+                            obj.val = inData[lineNum[0]]
+                            lineNum[0]++
+                        }
+                    }
+                    out = obj.val + "\r\n"
+                    break;
+            }
+            return out
+        }
+    </script>
+</head>
+<body>
+<div id="box">
+    <div class="textBox">
+        <h3>1.JSON汉化文件(需要事先格式化)</h3>
+        <textarea id="newCN"></textarea>
+    </div>
+    <div class="textBox">
+        <h3>3.输出</h3>
+        <label><input type="radio" name="outMode" value="printVal" checked='checked'>原始输出</label>
+        <label><input type="radio" name="outMode" value="printKey">输出Key(输出英文)</label>
+        <label><input type="radio" name="outMode" value="printPathVal">输出Path-Val</label>
+        <label><input type="radio" name="outMode" value="printTxt">输出纯TXT(方便机翻)</label>
+        <textarea id="newOther" readonly></textarea>
+
+    </div>
+    <div class="textBox">
+        <h3>2.我已有的翻译数据</h3>
+        <label><input type="radio" name="data2Mode" value="isJSON" checked='checked'>这是原始JSON翻译文件</label>
+        <label><input type="radio" name="data2Mode" value="isMap">这是Path-Val</label>
+        <label><input type="radio" name="data2Mode" value="isText">这是纯TXT(机翻结果)</label>
+        <textarea id="oldOtherFile"></textarea>
+          <h5 style="display: none;">Err out</h5>
+          <textarea id="errOut" readonly style="display: none;">目前没什么用</textarea>
+        <div id="tip">
+            <div>下面是一些使用实例，可点击使用</div>
+        </div>
+    </div>
+</div>
+</body>
+<script>
+    var in1 = document.getElementById("newCN");
+    var in2 = document.getElementById("oldOtherFile");
+    var out = document.getElementById("newOther");
+    var errOut = document.getElementById("errOut");
+
+    document.querySelectorAll("textarea").forEach(item => {
+        console.log(item, item.getAttribute("readonly"))
+        if (item.getAttribute("readonly") != null) return;
+        item.onchange = processingData
+    })
+    document.querySelectorAll("input").forEach(item => {
+        item.onclick = processingData
+    })
+</script>
+<script type="text">
+    var in1 = document.getElementById("newCN");
+    var in2 = document.getElementById("oldOtherFile");
+    var out = document.getElementById("newOther");
+    var errOut = document.getElementById("errOut");
+
+    async function getJSON(url) {
+        let outData
+        await fetch(url, {
+            headers: {
+                'Accept': 'application/json'
+            }
+        })
+            .then(response => response.json()) // 解析JSON响应
+            .then(data => {
+                outData = data
+            })
+            .catch(error => {
+                errOut.contains(error)
+            });
+        return outData
+    }
+
+    async function getText(url) {
+        let outData
+        await fetch(url, {
+            headers: {
+                // 'Accept': 'application/text'
+            }
+        })
+            .then(response => response.text()) // 解析JSON响应
+            .then(data => {
+                outData = data
+            })
+            .catch(error => {
+                errOut.contains(error)
+            });
+        return outData
+    }
+
+    async function test() {
+        let data1 = await getText("./zh-CN.json");
+        in1.value = data1
+        let data2 = await getText("./en-US.json");
+        in2.value = data2
+
+        // parse()
+        processingData()
+    }
+
+    test()
+</script>
+<script>
+    function showTip() {
+        var in1 = document.getElementById("newCN");
+        var in2 = document.getElementById("oldOtherFile");
+
+        var tipBox = document.getElementById("tip");
+
+        function setBaseJSON() {
+            let baseJSON = `{
+  "menu": {
+    "home": "主页",
+    "models":"模型",
+    "instructions":"预设",
+    "knowledgeBases":"知识库",
+    "chat":"对话",
+    "settings":"设置"
+  },
+
+  "models": {
+    "family": "家族",
+    "format": "格式",
+    "parameterSize": "参数量",
+    "quantizationLevel": "量化等级",
+    "Are you ok to delete the following model": "你确定要删除这个模型吗",
+    "Are you ok to delete the following models": "你确定要删除多个模型吗",
+    "Failed to download model": "下载模型失败",
+    "Enter the model name to download": "输入模型名称回车后下载模型",
+    "Discover models in the": "寻找模型，从",
+    "Ollama Model Library": "Ollama模型库",
+    "The browser doesn't support streaming responses": "浏览器不支持流式响应"
+  }
+}`
+            in1.value = baseJSON
+        }
+
+        addTipButton(`{
+ "menu": {
+  "home": "ホーム・ページ",
+  "models": "モデルとなって着る",
+  "instructions": "プリセット",
+  "knowledgeBases": "ナレッジベース",
+  "chat": "ダイアログ",
+  "settings": "設定＃セッテイ＃"
+ }
+}`, "输入JSON数据", tipBox, in2, ()=>{
+            setRadio("data2Mode", "isJSON")
+            setBaseJSON()
+        })
+
+        addTipButton(`{
+\t".menu.home": "ホーム・ページ",
+\t".menu.models": "モデルとなって着る",
+\t".menu.instructions": "プリセット",
+\t".menu.knowledgeBases": "ナレッジベース",
+\t".menu.chat": "ダイアログ",
+\t".menu.settings": "設定＃セッテイ＃"
+}`,"输入Path-Val", tipBox, in2, ()=>{
+            setRadio("data2Mode", "isMap")
+            setBaseJSON()
+        })
+
+        addTipButton(`ホーム・ページ
+モデルとなって着る
+プリセット
+ナレッジベース
+ダイアログ
+設定＃セッテイ＃`,"输入翻译后Text", tipBox, in2, ()=>{
+            setRadio("data2Mode", "isText")
+            setBaseJSON()
+        })
+
+    }
+    function addTipButton(temple, title, tipBox, in2, baseFun) {
+        let in2JSON = document.createElement("button");
+        in2JSON.onclick = ()=>{
+            baseFun()
+            in2.value = temple
+            processingData()
+        }
+        in2JSON.innerText = title
+        tipBox.appendChild(in2JSON)
+    }
+    function setRadio(radioName, val){
+        document.querySelectorAll("input[name="+radioName+"]").forEach(item=>{
+            item.removeAttribute("checked")
+            if (item.value === val){
+                item.setAttribute("checked", "true")
+            }
+            console.log(">>", item.value, item.getAttribute("checked"))
+        })
+    }
+    showTip()
+</script>
+</html>
