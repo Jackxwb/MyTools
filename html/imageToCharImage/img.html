@@ -142,6 +142,7 @@
 				let endTime = performance.now();
 				console.log(startTime, endTime, endTime-startTime)
 				$("#now").text("cache Image Pix Data, use: "+ showtime(endTime-startTime));
+				console.log("图片缓存生成耗时", showtime(endTime-startTime), endTime-startTime);
 			}
 			function cacheCheck(reCreate = false) {
 				if($("#useImageCache").prop("checked")){
@@ -225,6 +226,7 @@
 			 * @param spac
 			 */
 			function drawText(mi, fontname, spac) {
+				startTime_makeImage = performance.now();
 				try {
 					check()
 				} catch(e) {
@@ -243,13 +245,17 @@
 
 				for(i = 0; i < sou.height; i += spac) {
 					for(j = 0; j < sou.width; j += spac) {
-						// pixda = buff.getImageData(j, i, 1, 1).data
-						// try {
-						// 	hexcolor = getHEXColorFromArray(pixda)
-						// } catch (e) {
-						// 	console.log("颜色转换失败:", pixda)
-						// }
-						hexcolor = imageCacheData[j][i]
+
+						if($("#useImageCache").prop("checked")){
+							hexcolor = imageCacheData[j][i]
+						}else{
+							pixda = buff.getImageData(j, i, 1, 1).data
+							try {
+								hexcolor = getHEXColorFromArray(pixda)
+							} catch (e) {
+								console.log("颜色转换失败:", pixda)
+							}
+						}
 
 						hb.font = mi + "px " + fontname;
 						hb.fillStyle = hexcolor;
@@ -263,7 +269,10 @@
 
 					$("#now").text((Math.round(i / sou.height * 1000) / 10).toFixed(1) + " %");
 				}
-				$("#now").text("success");
+
+				let endTime = performance.now();
+				$("#now").text("one Make, useTime: "+ showtime(endTime-startTime_makeImage));
+				console.log("一次性生成", showtime(endTime-startTime_makeImage), endTime-startTime_makeImage)
 			}
 
 			let startTime_makeImage
