@@ -1,0 +1,43 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>B站 - 如意长长长</title>
+    <script>
+        // 脚本名称
+        let scriptName = "收藏夹可复制+一键搜索";
+        // 更新日志
+        let update = [
+            "0.1 - 初版"
+        ];
+        // 脚本内容
+        let code = ()=>{
+            document.querySelectorAll(".pgc-item-info").forEach((item) => {
+                const divElm = document.createElement("div");
+                divElm.className = "pgc-item-info";
+                divElm.innerHTML = item.innerHTML;
+                item.replaceWith(divElm);
+            });
+            document.querySelectorAll(".pgc-item-title").forEach((item) => {
+                let serach = document.createElement("a");
+                serach.innerHTML = "to bgm";
+                serach.target = "_blank";
+                serach.href = "https://bgm.tv/subject_search/" + item.innerText + "?cat=2";
+                serach.style = "background: antiquewhite;padding: 5px;border - radius: 5px;";
+                item.parentElement.insertBefore(serach, item.parentElement.firstChild);
+            });
+        }
+    </script>
+</head>
+<body>
+<h2>B站 - 收藏夹可复制+一键搜索</h2>
+<b>快速使用 →</b><a id="fast"></a>
+<br><i>拖动到书签栏即可</i>
+<h3>最新代码</h3>
+<pre id="code"></pre>
+<hr>
+<h3>更新历史</h3>
+<ul id="updateLog"></ul>
+</body>
+<script src="autoLoadCodeAndLog.js"></script>
+</html>
