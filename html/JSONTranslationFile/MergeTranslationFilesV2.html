@@ -46,6 +46,11 @@
             flex-direction: column;
         }
     </style>
+    <script src="MeaninglessJSON.js"></script>
+    <script>
+        //读取忽略规则
+        loadMeaninglessRules()
+    </script>
     <script>
         var in1 = document.getElementById("newCN");
         var in2 = document.getElementById("oldOtherFile");
@@ -131,8 +136,10 @@
                 path: "",
                 type: "root"
             }
-            // let oldData = JSON.parse(in2.value);
-            //let allLines = in1.value.split("\n");
+
+            //是否忽略键
+            ignoreMode = document.getElementById("ignore").checked
+
             let allLines = inData.split("\n");
             out.value = ""
             errOut.value = ""
@@ -201,6 +208,9 @@
                     path: lastItem.path + "." + result.key,
                     type: "item"
                 }
+                //处理忽略(只能忽略项目，对象无效)
+                // console.log("isIgnore", result.key , isIgnore(result.key))
+                if(ignoreMode && isIgnore(result.key)){continue;}
                 lastItem.son.push(newItem)
             }
 
@@ -419,6 +429,10 @@
     <div class="textBox">
         <h3>1.JSON汉化文件(需要事先格式化)</h3>
         <textarea id="newCN"></textarea>
+        <h3><label><input type="checkbox" name="ignore" id="ignore">启用忽略规则</label></h3>
+        <div class="ignoreBox">
+
+        </div>
     </div>
     <div class="textBox">
         <h3>3.输出</h3>
@@ -603,4 +617,5 @@
     }
     showTip()
 </script>
+
 </html>

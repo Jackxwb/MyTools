@@ -1,0 +1,42 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Code Rain</title>
+    <style>
+        body, html { margin: 0; overflow: hidden; }
+        canvas { display: block; }
+    </style>
+</head>
+<body>
+    <canvas id="canvas"></canvas>
+    <script>
+        const canvas = document.getElementById('canvas');
+        const ctx = canvas.getContext('2d');
+        canvas.width = window.innerWidth;
+        canvas.height = window.innerHeight;
+
+        // 初始化Web Worker
+        if (typeof (Worker) !== "undefined") {
+            const worker = new Worker("codeRainWorker.js");
+            worker.onmessage = function (e) {
+                drawTexts(e.data);
+            };
+            worker.postMessage({width: canvas.width, height: canvas.height});
+        } else {
+            console.error("Web Workers are not supported in your browser.");
+        }
+
+        function drawTexts(textDataArray) {
+            ctx.fillStyle = "rgba(0, 0, 0, 0.05)";
+            ctx.fillRect(0, 0, canvas.width, canvas.height);
+            ctx.fillStyle = "#0f0"; // 绿色文字颜色
+            ctx.font = "15px monospace";
+
+            textDataArray.forEach(data => {
+                ctx.fillText(data.text, data.x, data.y);
+            });
+        }
+    </script>
+</body>
+</html>

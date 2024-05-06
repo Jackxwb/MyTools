@@ -1,0 +1,783 @@
+<!DOCTYPE html>
+<html>
+
+	<head>
+		<meta charset="UTF-8">
+		<title>图片转字符图片</title>
+		<script src="http://libs.baidu.com/jquery/2.0.0/jquery.min.js"></script>
+		<script src="js/jquery-3.3.1.min.js" type="text/javascript" charset="utf-8"></script>
+		<script src="js/FileRead.js" type="text/javascript" charset="utf-8"></script>
+
+		<script src="js/canvas-toBlob.js" type="text/javascript" charset="utf-8"></script>
+		<script src="js/FileSaver.js" type="text/javascript" charset="utf-8"></script>
+		<style type="text/css">
+			* {
+				padding: 0;
+				margin: 0;
+				font-family: "微软雅黑";
+				text-shadow: 1px 1px 1px rgb(214, 214, 214);
+			}
+			
+			.short {
+				width: 4rem;
+			}
+			
+			.k {
+				display: inline-block;
+				padding: 0.2rem;
+				margin: 0.2rem;
+				border: 0.2rem solid #03A9F4;
+				border-radius: 0.5rem;
+				box-shadow: 1px;
+			}
+		</style>
+		<script type="text/javascript">
+			var language = {};
+
+			function init_language() {
+				language = {};
+				language["fontSize"] = "fontSize";
+				language["font"] = "font";
+				language["spacing"] = "spacing";
+				language["makeMode"] = "makeMode";
+				language["saveMode"] = "saveMode";
+				language["background"] = "background";
+				language["drawBackground"] = "drawBackground";
+				language["useCharArray"] = "useCharArray";
+				language["set"] = "Set";
+				language["random"] = "random";
+				language["clear"] = "Clear";
+				language["OnceMake"] = "OnceMake";
+				language["PixelMake"] = "PixelMake";
+				language["OneLineMake"] = "OneLineMake";
+				language["Base64Save"] = "Base64Save";
+				language["ImgSave"] = "ImgSave";
+				language["BolbSave"] = "BolbSave";
+			}
+
+			function changeLanguage(value) {
+				if(value == undefined || value == "") {
+					init_language()
+				} else if(value == "load") {
+					alert("施工未完成")
+				} else {
+					load_language(value);
+				}
+				f5();
+			}
+		</script>
+		<script type="text/javascript">
+			var text = "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ".split(/|/);
+
+			var pixda;
+			var pix;
+			var oldtime_more = 0;
+
+			$(function() {
+				$("canvas")[0].width = $(document).width() - 20;
+				$("canvas")[1].width = $(document).width() - 20;
+				$("#textArray").val("abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ")
+
+				init_language();
+				//				load_language("img_zh");
+				f5()
+			})
+
+			function load_language(lan) {
+				$(".language_js").remove();
+				var url = "js/language/" + lan + ".js";
+				try {
+					//					$.getScript("js/language/"+lan+".js",function(){
+					//						f5();
+					//					});
+					loadJSFromUrl("js/language/" + lan + ".js", function() {
+						f5();
+					}, "language_js", function() {
+						init_language()
+					});
+				} catch(e) {
+					init_language()
+				} finally {
+					f5()
+				}
+			}
+
+			function f5() {
+				for(let key in language) {
+					$("." + key).text(language[key])
+				}
+			}
+
+			function readimg(file) {
+				if(file != undefined) {
+					console.log(file[0]);
+					$("#filesize").text("fileSize: " + file[0].size / 1024 + " KB");
+					$("#now").text("LoadFile...");
+					var da = jsReadFiles(file, "openimg");
+				}
+			}
+
+			let imageCacheData = [];
+			function cacheImageData() {
+				let sou = document.getElementById("hb_buff");
+				let startTime = performance.now();
+				imageCacheData = new Array(sou.height);
+				for (let i = 0; i < sou.height; i++) {
+					imageCacheData[i] = new Array(sou.width);
+				}
+				context = sou.getContext("2d")
+				let tmp;
+				for (let i = 0; i < sou.height; i++) {
+					for (let j = 0; j < sou.width; j++) {
+						// imageCacheData[i][j] = context.getImageData(i, j, 1, 1).data;
+						tmp = context.getImageData(i, j, 1, 1).data
+						try {
+							imageCacheData[i][j] = getHEXColorFromArray(tmp)
+						} catch (e) {
+							console.log("颜色转换失败[", i, ",", j, "]", tmp)
+						}
+					}
+				}
+
+				let endTime = performance.now();
+				console.log(startTime, endTime, endTime-startTime)
+				$("#now").text("cache Image Pix Data, use: "+ showtime(endTime-startTime));
+			}
+			function cacheCheck(reCreate = false) {
+				if($("#useImageCache").prop("checked")){
+					if(imageCacheData.length===0 || reCreate){
+						$("#now").text("cerate cache image ...");
+						window.requestAnimationFrame(()=>{
+							cacheImageData()
+						})
+					}
+				}else{
+					// imageCacheData = []
+				}
+			}
+
+			function openimg(basedata) {
+				var img = document.getElementById("imgg")
+				img.src = basedata;
+				img.onload = function() {
+					var can = document.getElementById("hb_buff");
+					//					$("canvas")[0].height = this.height/this.width*can.width 
+					$("canvas")[0].height = this.height
+					$("canvas")[0].width = this.width
+					$("canvas")[1].height = $("canvas")[0].height;
+					$("canvas")[1].width = $("canvas")[0].width;
+					can.getContext("2d").drawImage(this, 0, 0, this.width, this.height);
+
+					$("#now").text("image loaded fin");
+					window.requestAnimationFrame(()=>{
+						//缓存图片像素
+						// cacheImageData();
+						cacheCheck(true)
+					})
+				}
+
+				$("#now").text("wait file load ...");
+			}
+
+			//			function drawText(mi,fontname){
+			//				var sou = document.getElementById("hb_buff");
+			//				var hb = document.getElementById("hb_text").getContext("2d");
+			//				
+			//				pixda = sou.getContext("2d").getImageData(0,0,sou.width,sou.height).data
+			//				pix = []
+			//				
+			//				
+			//				for (i=0;i<(pixda.length/4);i++) {
+			//					r = pixda[i*4];
+			//					g = pixda[i*4+1];
+			//					b = pixda[i*4+2];
+			//					a = pixda[i*4+3];
+			//					//算法来自:https://www.cnblogs.com/gossip/p/6058158.html
+			//					hexcolor = "#" + ((1 << 24) + (r << 16) + (g << 8) + b).toString(16).slice(1);
+			//					pix.push(hexcolor)
+			//				}
+			//				console.log(pix)
+			//				hb.font=mi+" "+fontname;
+			//				
+			//				console.log(sou.height+"<>"+sou.width)
+			//				
+			//				for (i=0;i<sou.height;i+=mi) {
+			//					for(j=0;j<sou.width;j+=mi){
+			//						hexcolor = pix[i*sou.height+j-1];
+			//						hb.fillStyle = hexcolor;
+			//						hb.fillText(
+			////							text[Math.round(Math.random()*(text.length-1))],
+			//							j+1*i+1,
+			//							j+1,i+1+mi
+			//							)
+			////						console.log(i+":"+j+">>"+(i*sou.height+j))
+			//					}
+			////					console.log(i/sou.width*100);
+			//					if(i>2)
+			//					return
+			//				}
+			//			}
+
+			/**
+			 * 一次性生成
+			 * @param mi
+			 * @param fontname
+			 * @param spac
+			 */
+			function drawText(mi, fontname, spac) {
+				try {
+					check()
+				} catch(e) {
+					//TODO handle the exception
+				}
+
+				$("#saveA").css("display", "none");
+				$("#hb_text").css("display", "block");
+				console.log("mi>>" + mi + " fontname>>" + fontname)
+				$("#now").text("...");
+
+				var sou = document.getElementById("hb_buff");
+				var hb = document.getElementById("hb_text").getContext("2d");
+
+				buff = sou.getContext("2d")
+
+				for(i = 0; i < sou.height; i += spac) {
+					for(j = 0; j < sou.width; j += spac) {
+						// pixda = buff.getImageData(j, i, 1, 1).data
+						// try {
+						// 	hexcolor = getHEXColorFromArray(pixda)
+						// } catch (e) {
+						// 	console.log("颜色转换失败:", pixda)
+						// }
+						hexcolor = imageCacheData[j][i]
+
+						hb.font = mi + "px " + fontname;
+						hb.fillStyle = hexcolor;
+						hb.fillText(
+							getText(),
+							//							j+1*i+1,
+							j + 1, i + 1 + mi
+						)
+						//						console.log(i+":"+j+">>"+(i*sou.height+j))
+					}
+
+					$("#now").text((Math.round(i / sou.height * 1000) / 10).toFixed(1) + " %");
+				}
+				$("#now").text("success");
+			}
+
+			let startTime_makeImage
+			function Moremake(f) {
+				try {
+					check()
+				} catch(e) {
+					//TODO handle the exception
+				}
+				var spac = parseInt($("#spacing").val())
+				var size = parseInt($("#size").val())
+				var font = parseInt($("#font").val())
+				var mi = size == undefined ? 10 : size
+				var fontname = font == undefined ? "微软雅黑" : font
+				spac = spac == undefined ? size : spac
+
+				$("#saveA").css("display", "none");
+				$("#hb_text").css("display", "block");
+				console.log("mi>>" + mi + " fontname>>" + fontname)
+				$("#now").text("...");
+
+				var sou = document.getElementById("hb_buff");
+				var hb = document.getElementById("hb_text").getContext("2d");
+
+				buff = sou.getContext("2d")
+
+				lastArray = [];
+				arrayIndex = 0;
+				text_Index = 0;
+
+				startTime_makeImage = performance.now();
+				if(f == 1) {
+					oldtime_more = performance.now();
+					more(0, 0, Number(mi), fontname, spac);
+					$("#now").text("Start...");
+				} else if(f == 2) {
+					more2(0, Number(mi), fontname, spac);
+					$("#now").text("Start...");
+				} else if(f == 3) {
+					more3(Number(mi), fontname, spac);
+
+					let endTime = performance.now();
+					$("#now").text("line Make, useTime: "+ showtime(endTime-startTime_makeImage));
+					console.log("多线程-行级生成", showtime(endTime-startTime_makeImage), endTime-startTime_makeImage)
+				}
+			}
+
+			/**
+			 * 像素点级别的生成
+			 * @param j
+			 * @param i
+			 * @param mi
+			 * @param fontname
+			 * @param spac
+			 */
+			function more(j, i, mi, fontname, spac) {
+				var sou = document.getElementById("hb_buff");
+				var hb = document.getElementById("hb_text").getContext("2d");
+				buff = sou.getContext("2d")
+
+				if($("#useImageCache").prop("checked")){
+					hexcolor = imageCacheData[j][i]
+				}else{
+					pixda = buff.getImageData(j, i, 1, 1).data
+					try {
+						hexcolor = getHEXColorFromArray(pixda)
+					} catch (e) {
+						console.log("颜色转换失败:", pixda)
+					}
+				}
+
+				hb.font = mi + "px " + fontname;
+				hb.fillStyle = hexcolor;
+				hb.fillText(
+					getText(),
+					//					j+1*i+1,
+					j + 1, i + 1 + mi
+				)
+				//				----
+				if(j >= sou.width) {
+					i += spac
+					j = 0;
+					//					$("#now").text(Math.round(i/sou.height*1000)/10+" %");
+
+					var overhe = (sou.height - i) / spac;
+					var newtime = performance.now();
+					var lasttime = (overhe * (newtime - oldtime_more))
+					// console.log("进度:", i, "/", sou.height, "耗时", (newtime - oldtime_more), showtime((newtime - oldtime_more)))
+					// $("#now").text(Math.round(i / sou.height * 1000) / 10 + " % - " + showtime(lasttime));
+					$("#now").text(`${(Math.round(i / sou.height * 1000) / 10).toFixed(1)} % useTime:${showtime(newtime-startTime_makeImage)}[- ${showtime(lasttime)}]`);
+					oldtime_more = newtime;
+				} else {
+					j += spac
+				}
+				/*var newtime = performance.now();
+				var pix_ed = i*sou.width+j;
+				var overpix = (sou.width*sou.height-pix_ed);
+				console.log("overpix:"+overpix+" time"+(newtime-oldtime)+" lasttime:"+overpix*(newtime-oldtime)/1000+" s")*/
+				//				$("#now").text(Math.round(i/sou.height*1000)/10+" % -"+"-"+" s");
+				if(i < sou.height) {
+					// setTimeout("more(" + j + "," + i + "," + mi + ",'" + fontname + "'," + spac + ")", 10);
+					// eval(`more(${j}, ${i}, ${mi}, ${fontname}, ${spac})`)
+					window.requestAnimationFrame(()=>{
+						more(j, i, mi, fontname, spac);
+					})
+				} else {
+					// $("#now").text("success");
+					let endTime = performance.now();
+					$("#now").text("pix Make, useTime: "+ showtime(endTime-startTime_makeImage));
+					console.log("像素级生成", showtime(endTime-startTime_makeImage), endTime-startTime_makeImage)
+				}
+			}
+			var lastArray = [];
+			var arrayIndex = 0;
+			var buffNum = 5
+
+			/**
+			 * 行级别生成
+			 * @param i
+			 * @param mi
+			 * @param fontname
+			 * @param spac
+			 */
+			function more2(i, mi, fontname, spac) {
+				var sou = document.getElementById("hb_buff");
+				var hb = document.getElementById("hb_text").getContext("2d");
+				buff = sou.getContext("2d")
+
+				// var oldtime = performance.now();
+				//				---
+				for(var j = 0; j < sou.width; j += spac) {
+					if($("#useImageCache").prop("checked")){
+						hexcolor = imageCacheData[j][i]
+					}else{
+						pixda = buff.getImageData(j, i, 1, 1).data
+						try {
+							hexcolor = getHEXColorFromArray(pixda)
+						} catch (e) {
+							console.log("颜色转换失败:", pixda)
+						}
+					}
+
+					hb.font = mi + "px " + fontname;
+					hb.fillStyle = hexcolor;
+					hb.fillText(
+						getText(),
+						//					j+1*i+1,
+						j + 1, i + 1 + mi
+					)
+				}
+				i += spac;
+
+				// //				----
+				// var newtime = performance.now();
+				// var overhe = sou.height - i;
+				// var lasttime = (Math.round((overhe * (newtime - oldtime) / 100)) / 10)
+				// //init
+				// if(lastArray.length < buffNum) {
+				// 	for(let i = 0; i < buffNum; i++) {
+				// 		lastArray[i] = lasttime
+				// 	}
+				// }
+				// //
+				// if(arrayIndex > buffNum) {
+				// 	arrayIndex = 0;
+				// }
+				// lastArray[arrayIndex] = parseFloat(lasttime);
+				// var buffLastTime = 0;
+				// for(var t in lastArray) {
+				// 	buffLastTime += lastArray[t];
+				// }
+				// buffLastTime = buffLastTime / buffNum;
+				// arrayIndex++;
+				// console.log("lasttime>>"+buffLastTime+" use:"+(newtime-oldtime)+" ms", lastArray)
+				// oldtime_more = performance.now();
+				// $("#now").text(Math.round(i / sou.height * 1000) / 10 + " % -" + showtime(buffLastTime));
+
+				let overhe = (sou.height - i) / spac;
+				let newtime = performance.now();
+				let lasttime = (overhe * (newtime - oldtime_more))
+				$("#now").text(`${(Math.round(i / sou.height * 1000) / 10).toFixed(1)} % useTime:${showtime(newtime-startTime_makeImage)}[- ${showtime(lasttime)}]`);
+				oldtime_more = newtime;
+
+				if(i < sou.height) {
+					// setTimeout("more2(" + i + "," + mi + ",'" + fontname + "'," + spac + ")", 10);
+					window.requestAnimationFrame(()=>{
+						more2(i, mi, fontname, spac);
+					});
+				} else {
+					// $("#now").text("success");
+					let endTime = performance.now();
+					$("#now").text("line Make, useTime: "+ showtime(endTime-startTime_makeImage));
+					console.log("行级生成", showtime(endTime-startTime_makeImage), endTime-startTime_makeImage)
+				}
+			}
+
+			/**
+			 * 感觉更耗资源，速度也慢
+			 * @param mi
+			 * @param fontname
+			 * @param spac
+			 */
+			function more3(mi, fontname, spac) {
+				let sou = document.getElementById("hb_buff");
+				let hb = document.getElementById("hb_text").getContext("2d");
+				// buff = sou.getContext("2d");
+
+				// 初始化Web Worker
+				if (typeof (Worker) !== "undefined") {
+
+					for(let i = 0; i < sou.height; i += spac) {
+
+						const worker = new Worker("Worker/LineParsingWorker.js");
+						worker.onmessage = function (e) {
+							// drawTexts(e.data);
+							// console.log("回收",e.data)
+							for (const item of e.data) {
+								window.requestAnimationFrame(()=>{
+									hb.font = mi + "px " + fontname;
+									hb.fillStyle = item.color;
+									hb.fillText(
+											getText(),
+											item.x, item.y
+									)
+								})
+							}
+						};
+						window.requestAnimationFrame(()=>{
+							worker.postMessage({
+								cacheData: imageCacheData,
+								line: i,
+								spac: spac,
+								widthLen: sou.width,
+							});
+							// console.log("下发", i)
+						})
+
+					}
+				} else {
+					console.error("Web Workers are not supported in your browser.");
+				}
+			}
+
+			function cre() {
+				var sou = document.getElementById("hb_buff");
+				pixda = sou.getContext("2d").getImageData(0, 0, sou.width, sou.height).data
+				for(i = 0; i < (pixda.length / 4); i += 1) {
+					r = pixda[i * 4];
+					g = pixda[i * 4 + 1];
+					b = pixda[i * 4 + 2];
+					a = pixda[i * 4 + 3];
+					//算法来自:https://www.cnblogs.com/gossip/p/6058158.html
+					hexcolor = "#" + ((1 << 24) + (r << 16) + (g << 8) + b).toString(16).slice(1);
+					var t1 = document.createElement("div")
+					t1.className = 't'
+					$(t1).css("width", "10")
+					$(t1).css("height", "10")
+					$(t1).css("background-color", hexcolor);
+					$(t1).attr("id", i);
+					$("body").append(t1)
+
+					//					if(i%1000==0)
+					console.log(i);
+					if((i + 1) % 100 == 0)
+						$("body").append(document.createElement("br"))
+				}
+			}
+
+			function make() {
+				var size = parseInt($("#size").val())
+				var font = parseInt($("#font").val())
+				spac = parseInt($("#spacing").val())
+				size = size == undefined ? 10 : size
+				font = font == undefined ? "微软雅黑" : font
+				spac = spac == undefined ? size : spac
+
+				drawText(parseInt(size), font, spac);
+			}
+
+			function setTextArray() {
+				text = $("#textArray").val().split(/|/);
+			}
+
+			/*
+			 * 保存方法
+			 */
+			//from:https://blog.csdn.net/qq547276542/article/details/51906741
+			var saveFile = function(data, filename) {
+				var save_link = document.createElementNS('http://www.w3.org/1999/xhtml', 'a');
+				save_link.href = data;
+				save_link.download = filename;
+
+				var event = document.createEvent('MouseEvents');
+				event.initMouseEvent('click', true, false, window, 0, 0, 0, 0, 0, false, false, false, false, 0, null);
+				save_link.dispatchEvent(event);
+			};
+
+			function savef() {
+				var hb = document.getElementById("hb_text").toDataURL("image/jpg");
+				saveFile(hb, "test.jpg");
+			}
+
+			function savePhone() {
+				var hb = document.getElementById("hb_text").toDataURL("'image/jpg'");
+				$("#saveimg").attr("src", hb);
+				$("#saveA").attr("href", hb);
+				$("#saveA").css("display", "block");
+				$("#hb_text").css("display", "none");
+			}
+
+			function FileSaverJS() {
+				var hb = document.getElementById("hb_text");
+				hb.toBlob(function(blob) {
+					saveAs(blob, new Date().getTime() + ".png");
+				})
+				try {
+					hb.toBlob()
+				} catch(e) {
+					alert("你的浏览器不支持！")
+				}
+				//				var file = new File(hb.toBlob(), "pretty "+new Date().getTime()+".png", {type: "text/Base64;charset=utf-8"});
+				//				saveAs(file)
+			}
+
+			/*
+			 * 通用方法
+			 */
+			function checkSelected() {
+				if($("#Backgroup").is(":checked") == true) {
+					drawBack();
+					return true;
+				}
+				return false;
+			}
+
+			function drawBack() {
+				var color = "#FFFFFF";
+				var hb = document.getElementById("hb_text");
+				var hbc = hb.getContext("2d");
+				try {
+					var color = $("#backgroundColor").val();
+				} catch(e) {
+					//TODO handle the exception
+				}
+				color = color == undefined ? "#ffffff" : color;
+				hbc.fillStyle = color;
+				hbc.fillRect(0, 0, hb.width, hb.height);
+			}
+
+			function showtime(se) {
+				// se = se / 1000.0;
+				se = parseFloat(se);
+				se = parseInt(se);
+
+				// if(se >= 60) {
+				// 	t = se / 60;
+				// 	if(t >= 60) {
+				// 		t = t / 60
+				// 		var h = Math.round(t);
+				// 		var m = Math.round(se /1000 / 60 % 60);
+				// 		var s = Math.round(se / 1000 % 60);
+				// 		let ms = Math.round(se % 1000)
+				// 		return h + ":" + m + ":" + s + "." + ms;
+				// 	} else {
+				// 		return "0:" + Math.round(t) + ":" + (Math.round(t % 60) - 1) + "s"
+				// 	}
+				// }
+				// return se + "s"
+
+				let h = Math.round(se / 1000 / 60 / 60);
+				let m = Math.round(se / 1000 / 60 % 60);
+				let s = Math.round(se / 1000 % 60);
+				let ms = Math.round(se % 1000)
+				return h + ":" + m + ":" + s + "." + ms;
+			}
+
+			//获取16进制颜色
+			function getHEXColorFromArray(pix, i) {
+				if(i == undefined) {
+					i = 0;
+				}
+				r = pix[i * 4];
+				g = pix[i * 4 + 1];
+				b = pix[i * 4 + 2];
+				a = pix[i * 4 + 3];
+				return getHEXColor(r, g, b)
+			}
+			//算法来自:https://www.cnblogs.com/gossip/p/6058158.html
+			function getHEXColor(r, g, b) {
+				return "#" + ((1 << 24) + (r << 16) + (g << 8) + b).toString(16).slice(1);
+			}
+			
+			//字符游标
+			var text_Index = 0;
+			function getText() {
+				var re = "";
+				if($("#random").prop("checked")) {
+					re = text[Math.round(Math.random() * (text.length - 1))]
+				} else {
+					var lenMax = text.length
+					if(text_Index >= lenMax) {
+						text_Index = 0
+					}
+					re = text[text_Index];
+				}
+				text_Index++;
+				return re;
+			}
+			
+			function loadJSFromUrl(url, callback, className, errCall) {
+				var script = document.createElement('script');
+				script.type = "text/javascript";
+				if(typeof(callback) != "undefined") {
+					if(script.readyState) {
+						script.onreadystatechange = function() {
+							if(script.readyState == "loaded" || script.readyState == "complete") {
+								script.onreadystatechange = null;
+								callback();
+							}
+						}
+					} else {
+						script.onload = function() {
+							callback();
+						}
+					}
+				}
+				script.src = url;
+				script.className = className;
+				try {
+					document.body.appendChild(script);
+				} catch(e) {
+					errCall();
+				}
+			}
+		</script>
+		<style type="text/css">
+			* {
+				padding: 0;
+				margin: 0;
+			}
+			
+			.hb {
+				/*width: 98%;
+				padding: 1%;*/
+			}
+			
+			#hb_buff {
+				display: none;
+			}
+			
+			.t {
+				display: inline-block;
+			}
+			
+			#saveA {
+				display: none;
+			}
+		</style>
+	</head>
+
+	<body>
+		<input type="file" onchange="readimg(this.files)" />
+		<button onclick="$('#hb_text')[0].height=$('#hb_text')[0].height">Clear</button>
+		<select name="language" onchange="changeLanguage(this.value)">
+			<option value="">English</option>
+			<option value="img_zh">中文</option>
+			<option value="load">load your set</option>
+		</select>
+		<label title="生成图片像素点缓存(内存换速度)" for="useImageCache"><input class="useImageCache" type="checkbox" id="useImageCache" onchange="cacheCheck();"/>Use Image Cache</label>
+		<br />
+		<div class="k">
+			<span class="fontSize">字体大小：</span>
+			<input class="short" type="text" name="" id="size" value="10" />
+			<span class="font">字体：</span>
+			<input class="short" type="text" name="" id="font" value="微软雅黑" />
+			<span class="spacing">生成间距：</span>
+			<input class="short" type="text" name="" id="spacing" value="10" />
+		</div>
+		<div class="k">
+			<span class="makeMode">生成模式</span>
+			<button class="OnceMake" onclick="make()" title="一次性生成，大文件必定卡死">Make</button>
+			<button class="PixelMake" onclick="Moremake(1)" title="像素点级别的生成，速度最慢">VerySlow_Make</button>
+			<button class="OneLineMake" onclick="Moremake(2)" title="行级生成，兼顾速度与稳定，首选模式">BitSlow_Make</button>
+			<!--<button class="OneLineMakeWorker" onclick="Moremake(3)" title="多线程-行级生成，内存爆炸，不要用">BitSlow_Make_多线程</button>-->
+		</div>
+		<div class="k">
+			<span class="saveMode">保存模式</span>
+			<button class="Base64Save" onclick="savef()" title="Base64数据流模式保存">PCSave</button>
+			<button class="ImgSave" onclick="savePhone()" title="适配部分手机和浏览器，转换成图片保存">PhoneSave</button>
+			<button class="BolbSave" onclick="FileSaverJS()" title="增强适配的手机和浏览器，以Bolb流形式保存。由FileSave.js提供">FileSaver.JS</button>
+		</div>
+		<div class="k">
+			<span class="background">背景</span>
+			<label>
+				<input class="background" type="checkbox" name="background" id="Backgroup" value="" />background
+				<input type="color" name="background" id="backgroundColor" value="#ffffff" />
+			</label>
+			<button class="drawBackground" onclick="drawBack()">DrawBackGround</button>
+		</div>
+		<br />
+		<b id="filesize">fileSize:null</b>
+		<b id="now">(wait)</b>
+		<br />
+		<div class="k">
+			<span class="useCharArray">采用字符集</span>
+			<input type="text" name="" id="textArray" value="" />
+			<button class="set" onclick="setTextArray()">Set</button>
+			<label><input class="random" type="checkbox" id="random" checked="checked" />随机</label>
+		</div>
+		<hr />
+		<img id="imgg" src="" style="display: none;" />
+		<canvas id="hb_buff" class="hb" width="100%" height="100%"></canvas>
+		<canvas id="hb_text" class="hb"></canvas>
+		<a id="saveA" class="save" href="javascript:void(0)" download="img"><img class="save" src="" id="saveimg" /></a>
+	</body>
+
+</html>

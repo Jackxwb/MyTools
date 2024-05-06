@@ -8,9 +8,9 @@ update.forEach((str)=>{
 
 function smail() {
     let str = code.toString();
-    str = str.replaceAll(/\n[ ]*/g, "")
-    str = str.replaceAll(/^[^\{]*\{/g, "javascript:")
-    str = str.replaceAll(/\}$/g, "")
+    str = str.replaceAll(/\n */g, "")
+    str = str.replaceAll(/^[^{]*\{/g, "javascript:")
+    str = str.replaceAll(/}$/g, "")
     let a = document.getElementById("fast");
     a.innerText = scriptName;
     a.href = str;

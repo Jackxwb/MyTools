@@ -1,0 +1,16 @@
+button,.button{
+	background-color: cornflowerblue;
+	color: white;
+	padding: 0.5rem 1rem;
+	border: none;
+}
+input,.input,.onelinetext{
+	padding: 0.5rem 1rem;
+	border: none;
+}
+.R{
+	float: right;
+}
+.L{
+	float: left;
+}
