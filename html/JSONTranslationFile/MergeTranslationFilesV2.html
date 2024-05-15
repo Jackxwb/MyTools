@@ -162,7 +162,9 @@
 
                 let result = pOneLineData(nowLine);
 
-                if (result.isEnd) {
+                if(result.val) {
+                    //过滤掉内容里面有{的情况
+                }else if (result.isEnd) {
                     if (result.isStart) {//单行直接结束
                         if (result.key == null) {
                             console.log("对象开始，却找不到第一行", i, result, nowLine)
@@ -181,23 +183,22 @@
                     }
                     lastItem = lastItem.fa
                     continue
-                }
-                if (result.isStart) {
-                    if (result.key == null) {
-                        console.log("对象开始，却找不到第一行", i, result, nowLine)
-                        errOut += `line: ${i} , 对象开始，却找不到第一行, ${result}`
+                }else if (result.isStart) {
+                        if (result.key == null) {
+                            console.log("对象开始，却找不到第一行", i, result, nowLine)
+                            errOut += `line: ${i} , 对象开始，却找不到第一行, ${result}`
+                            continue
+                        }
+                        let newObj = {
+                            son: [],
+                            fa: lastItem,
+                            key: result.key,
+                            path: lastItem.path + "." + result.key,
+                            type: "object"
+                        }
+                        lastItem.son.push(newObj)
+                        lastItem = newObj
                         continue
-                    }
-                    let newObj = {
-                        son: [],
-                        fa: lastItem,
-                        key: result.key,
-                        path: lastItem.path + "." + result.key,
-                        type: "object"
-                    }
-                    lastItem.son.push(newObj)
-                    lastItem = newObj
-                    continue
                 }
 
                 let newItem = {
@@ -249,6 +250,8 @@
             let val = null;
             if (findVal != null && findVal.length > 1) {
                 val = findVal[1]
+            }else{
+                console.log("意外的数据", str, isStart, isKV, isEnd)
             }
             return {
                 isStart: isStart,
