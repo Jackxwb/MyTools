@@ -222,11 +222,11 @@
          *  分析单行数据
          */
         const objStart = /.*\{.*/
-        const objKeyVal = /.*"[^"]*".?\:.?"[^"]*".*/
+        const objKeyVal = /.*"[^"]*".?\:[^"]*"(.*)".*/
         const objEnd = /.*\}.*/
 
         const objStartGetKey = /.*"([^"]*)".?\:/
-        const objStartGetVal = /\:.*"([^"]*)"/
+        const objStartGetVal = /\:[^"]*"(.*)"/
 
         function pOneLineData(str) {
             let isStart = objStart.test(str);
