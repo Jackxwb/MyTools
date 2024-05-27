@@ -317,7 +317,16 @@
 					let endTime = performance.now();
 					$("#now").text("line Make, useTime: "+ showtime(endTime-startTime_makeImage));
 					console.log("多线程-行级生成", showtime(endTime-startTime_makeImage), endTime-startTime_makeImage)
+
+					if($("#loopMake").prop("checked")){
+						window.requestAnimationFrame(()=>{
+							clear()
+							Moremake(3)
+						})
+					}
 				}
+
+
 			}
 
 			/**
@@ -383,6 +392,13 @@
 					let endTime = performance.now();
 					$("#now").text("pix Make, useTime: "+ showtime(endTime-startTime_makeImage));
 					console.log("像素级生成", showtime(endTime-startTime_makeImage), endTime-startTime_makeImage)
+
+					if($("#loopMake").prop("checked")){
+						window.requestAnimationFrame(()=>{
+							clear()
+							Moremake(1)
+						})
+					}
 				}
 			}
 			var lastArray = [];
@@ -466,10 +482,18 @@
 					let endTime = performance.now();
 					$("#now").text("line Make, useTime: "+ showtime(endTime-startTime_makeImage));
 					console.log("行级生成", showtime(endTime-startTime_makeImage), endTime-startTime_makeImage)
+
+					if($("#loopMake").prop("checked")){
+						window.requestAnimationFrame(()=>{
+							clear()
+							Moremake(2)
+						})
+					}
 				}
 			}
 
 			/**
+			 * 多线程生成
 			 * 感觉更耗资源，速度也慢
 			 * @param mi
 			 * @param fontname
@@ -550,6 +574,13 @@
 				spac = spac == undefined ? size : spac
 
 				drawText(parseInt(size), font, spac);
+
+				if($("#loopMake").prop("checked")){
+					window.requestAnimationFrame(()=>{
+						clear()
+						make()
+					})
+				}
 			}
 
 			function setTextArray() {
@@ -707,6 +738,10 @@
 					errCall();
 				}
 			}
+
+			function clear() {
+				$('#hb_text')[0].height=$('#hb_text')[0].height
+			}
 		</script>
 		<style type="text/css">
 			* {
@@ -741,7 +776,7 @@
 			<option value="img_zh">中文</option>
 			<option value="load">load your set</option>
 		</select>
-		<label title="生成图片像素点缓存(内存换速度，提升不大，内存占用很多，反倒是创建耗时很长，不推荐使用)" for="useImageCache"><input class="useImageCache" type="checkbox" id="useImageCache" onchange="cacheCheck();"/>Use Image Cache</label>
+		<label title="生成图片像素点缓存(内存换速度，提升不大，内存占用很多，反倒是创建耗时很长，不推荐使用)" for="useImageCache"><input type="checkbox" id="useImageCache" onchange="cacheCheck();"/><s class="useImageCache">Use Image Cache</s></label>
 		<br />
 		<div class="k">
 			<span class="fontSize">字体大小：</span>
@@ -757,6 +792,7 @@
 			<button class="PixelMake" onclick="Moremake(1)" title="像素点级别的生成，速度最慢">VerySlow_Make</button>
 			<button class="OneLineMake" onclick="Moremake(2)" title="行级生成，兼顾速度与稳定，首选模式">BitSlow_Make</button>
 			<!--<button class="OneLineMakeWorker" onclick="Moremake(3)" title="多线程-行级生成，内存爆炸，不要用">BitSlow_Make_多线程</button>-->
+			<label title="建议：只对小尺寸文件启用；使用一次性生成效果最佳。"><input type="checkbox" id="loopMake"><span class="loopMake">Loop Make</span></label>
 		</div>
 		<div class="k">
 			<span class="saveMode">保存模式</span>
@@ -767,9 +803,10 @@
 		<div class="k">
 			<span class="background">背景</span>
 			<label>
-				<input class="background" type="checkbox" name="background" id="Backgroup" value="" />background
-				<input type="color" name="background" id="backgroundColor" value="#ffffff" />
+				<input class="background" type="checkbox" name="background" id="Backgroup" value="" />
+				<span class="autoDraw">Auto Draw</span>
 			</label>
+			<input type="color" name="background" id="backgroundColor" value="#ffffff" />
 			<button class="drawBackground" onclick="drawBack()">DrawBackGround</button>
 		</div>
 		<br />
