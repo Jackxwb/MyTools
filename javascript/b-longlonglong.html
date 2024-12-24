@@ -13,30 +13,31 @@
         ];
         // 脚本内容
         let code = ()=>{
-            let l_fa_old = document.querySelector(".r-con");
-            if (l_fa_old) {
-                l_fa_old.style.position = "relative";
-            }
-            let tmp = document.querySelector(".video-sections-content-list");
-            let b = document.createElement("a");
-            b.className = "item issue";
-            b.style = "position: sticky;top: 200px;z-index: 2;transform: translate(10px); writing-mode: vertical-rl; border: 1px solid var(--line_regular); background-color: var(--bg1_float); padding: 10px; border-radius: 8px; display: block;";
-            b.onclick = () => {
-                let l = document.querySelector(".base-video-sections-v1>.video-sections-content-list");
-                if (l.style.maxHeight == "none") {
-                    l.style.maxHeight = "";
-                } else {
-                    l.style.maxHeight = "none";
-                    l.style.height = "auto";
+            {
+                let l_fa_old = document.querySelector(".r-con");
+                if (l_fa_old) {
+                    l_fa_old.style.position = "relative";
                 }
-            };
-            b.innerText = "如意长长长";
-
-            let c = document.createElement("div");
-            c.style = "position: absolute; left: calc(100% - 10px); height: calc(100% - 80px);";
-            c.appendChild(b);
-
-            tmp.before(c);
+                let tmp = document.querySelector(".video-pod");
+                let b = document.createElement("a");
+                b.className = "item issue";
+                b.style = "position: sticky;top: 200px;z-index: 2;transform: translate(10px); writing-mode: vertical-rl; border: 1px solid var(--line_regular); background-color: var(--bg1_float); padding: 10px; border-radius: 8px; display: block;";
+                b.onclick = ()=>{
+                    let l = document.querySelector(".video-pod__body");
+                    if (l.style.maxHeight == "none") {
+                        l.style.maxHeight = "";
+                    } else {
+                        l.style.maxHeight = "none";
+                        l.style.height = "auto";
+                    }
+                }
+                ;
+                b.innerText = "如意长长长";
+                let c = document.createElement("div");
+                c.style = "position: absolute; left: calc(100% - 10px); height: calc(100% - 80px);";
+                c.appendChild(b);
+                tmp.before(c);
+            }
         }
     </script>
 </head>
