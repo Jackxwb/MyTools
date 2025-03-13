@@ -17,5 +17,5 @@
 
 
 ## 开源项目
-- [胶带长度估算](https://github.com/Jackxwb/estimation_of_tape_length) 🚀 [Github Page](https://jackxwb.github.io/estimation_of_tape_length/)
-- [fancontrol-配置文件可视化工具](https://github.com/Jackxwb/fancontrol-edit) 🚀 [Github Page](https://jackxwb.github.io/fancontrol-edit/)
+- [胶带长度估算](https://jackxwb.github.io/estimation_of_tape_length/) 📂 [Github](https://github.com/Jackxwb/estimation_of_tape_length)
+- [fancontrol-配置文件可视化工具](https://jackxwb.github.io/fancontrol-edit/) 📂 [Github](https://github.com/Jackxwb/fancontrol-edit)
