@@ -14,3 +14,8 @@
 - [JSON翻译辅助工具](./html/JSONTranslationFile/MergeTranslationFilesV2.html)
 - [图片转字符图片](./html/imageToCharImage/img.html)
 > 使用 字符 + 颜色 重构图片
+
+
+## 开源项目
+- [胶带长度估算](https://github.com/Jackxwb/estimation_of_tape_length) 🚀 [Github Page](https://jackxwb.github.io/estimation_of_tape_length/)
+- [fancontrol-配置文件可视化工具](https://github.com/Jackxwb/fancontrol-edit) 🚀 [Github Page](https://jackxwb.github.io/fancontrol-edit/)
