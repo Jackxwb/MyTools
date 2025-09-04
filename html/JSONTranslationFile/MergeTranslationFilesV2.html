@@ -222,10 +222,12 @@
          *  分析单行数据
          */
         const objStart = /.*\{.*/
-        const objKeyVal = /.*"[^"]*".?\:[^"]*"(.*)".*/
+        //const objKeyVal = /.*"[^"]*".?\:[^"]*"(.*)".*/
+        const objKeyVal = /\s?"(.*?)"\s?\:[^"]*"(.*)".*/
         const objEnd = /.*\}.*/
 
-        const objStartGetKey = /.*"([^"]*)".?\:/
+        //const objStartGetKey = /.*"([^"]*)".?\:/
+        const objStartGetKey = /\s?"(.*?)"\s?\:/
         const objStartGetVal = /\:[^"]*"(.*)"/
 
         function pOneLineData(str) {
